@@ -1,6 +1,11 @@
-from aiogram import Bot, Dispatcher, executor, types
+import asyncio
 import os
+from aiohttp import web
+from aiogram import Bot, Dispatcher, executor, types
 
+# -----------------------------
+# Telegram Bot Setup
+# -----------------------------
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
@@ -43,4 +48,29 @@ async def admin_confirm(msg: types.Message):
 async def support(msg: types.Message):
     await msg.answer("برای پشتیبانی پیام بده: @YourSupportID")
 
-executor.start_polling(dp)
+
+# -----------------------------
+# Fake Web Server (Render Trick)
+# -----------------------------
+async def handle(request):
+    return web.Response(text="Bot is running")
+
+app = web.Application()
+app.router.add_get("/", handle)
+
+
+# -----------------------------
+# Run both bot + web server
+# -----------------------------
+async def main():
+    loop = asyncio.get_event_loop()
+
+    # Run Telegram bot
+    loop.create_task(executor.start_polling(dp, skip_updates=True))
+
+    # Run fake web server
+    web.run_app(app, port=8000)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
